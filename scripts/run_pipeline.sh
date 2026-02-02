@@ -68,7 +68,14 @@ cd "$PROJECT_ROOT"
 
 # Step 2: Pre-trim Quality Control
 mkdir -p qc/pre_trim
-fastqc dataset/fastq_files/*.fastq.gz -o qc/pre_trim/
+
+if ls qc/pre_trim/*.html 1> /dev/null 2>&1; then
+  echo "[OK] Pre-trim FastQC reports already exist — skipping"
+else
+  echo "[QC] Running FastQC on raw FASTQs"
+  fastqc dataset/fastq_files/*.fastq.gz -o qc/pre_trim/
+fi
+
 # Step 3: Trimming / Cleaning
 
 # Step 4: Post-trim Quality Control
