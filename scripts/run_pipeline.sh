@@ -1,6 +1,9 @@
 # Step 1: Download FASTQs
 
 #!/bin/bash
+
+SECONDS=0
+
 set -euo pipefail
 
 # Path to existing FASTQ folder
