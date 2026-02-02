@@ -67,13 +67,24 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
 # Step 2: Pre-trim Quality Control
-mkdir -p qc/pre_trim
 
-if ls qc/pre_trim/*.html 1> /dev/null 2>&1; then
+# FastQC on raw FASTQs
+mkdir -p qc/pre_trim/fastqc qc/pre_trim/multiqc
+
+# FastQC on raw FastQs
+if ls qc/pre_trim/fastqc/*_fastqc.html 1> /dev/null 2>&1; then
   echo "[OK] Pre-trim FastQC reports already exist — skipping"
 else
   echo "[QC] Running FastQC on raw FASTQs"
-  fastqc dataset/fastq_files/*.fastq.gz -o qc/pre_trim/
+  fastqc dataset/fastq_files/*.fastq.gz -o qc/pre_trim/fastqc/
+fi
+
+# MultiQC aggregation
+if [[ -f qc/pre_trim/multiqc/multiqc_report.html ]]; then
+  echo "[OK] Pre-trim MultiQC report already exists — skipping"
+else
+  echo "[QC] Running MultiQC on pre-trim FastQC reports"
+  multiqc qc/pre_trim/fastqc/ -o qc/pre_trim/multiqc/
 fi
 
 # Step 3: Trimming / Cleaning
