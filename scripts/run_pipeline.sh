@@ -57,15 +57,21 @@ echo "[ALL DONE]"
 # the help of google colab, google drive, and onedrive. I then bought a harddrive and offloaded the project, including fastqs, to 
 # the said harddrive. 
 
-# The following is now written FULLY by me with the help of class info and Bioinformagician on YouTube. 
-# If more help outside of those two things happen, it will be noted by the code. Thanks!
+
+# the following three lines were also written with the help of AI to ensure that the script would run from any location.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT"
 
 # Step 2: Pre-trim Quality Control
-
+mkdir -p qc/pre_trim
+fastqc data/fastq_files/*.fastq.gz -o qc/pre_trim/
 # Step 3: Trimming / Cleaning
 
 # Step 4: Post-trim Quality Control
 
 # Step 5: Quantification + Count Matrix
+
+
 
 
