@@ -18,7 +18,7 @@ bash scripts/run_pipeline.sh
 ```
 
 Notes
-- `dataset/fastq_files/` currently contains paired FASTQ files (SRR*). 
+- `dataset/fastq_files/` currently contains paired FASTQ files (SRR*). Use `have.txt`, `want.txt`, and `missing.txt` to track download/availability.
 - `qc/pre_trim/` and `qc/post_trim/` are placeholders for FastQC/MultiQC outputs; they may be empty until you run the pipeline.
 
 Suggested next steps
