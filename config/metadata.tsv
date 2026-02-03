@@ -1,0 +1,11 @@
+sample_id	group	tumor_type
+SRR36750771	Normal	Normal
+SRR36750772	Normal	Normal
+SRR36750775	TumorA	Villous_Adenoma
+SRR36750776	TumorA	Villous_Adenoma
+SRR36750778	TumorB	Tubular_Adenoma
+SRR36750779	TumorB	Tubular_Adenoma
+SRR36750780	TumorC	Early_Stage_Tumor
+SRR36750781	TumorC	Early_Stage_Tumor
+SRR36750783	TumorD	Advanced_Tumor
+SRR36750784	TumorD	Advanced_Tumor
