@@ -1,5 +1,6 @@
 
 # Intro to Bioinformatics — Pipeline Workspace
+# following was written with Visual Studio AI 
 
 
 **Contents**
@@ -17,14 +18,8 @@ Getting started
 bash scripts/run_pipeline.sh
 ```
 
-Notes
-- `dataset/fastq_files/` currently contains paired FASTQ files (SRR*). Use `have.txt`, `want.txt`, and `missing.txt` to track download/availability.
-- `qc/pre_trim/` and `qc/post_trim/` are placeholders for FastQC/MultiQC outputs; they may be empty until you run the pipeline.
 
-Suggested next steps
-- Open `scripts/run_pipeline.sh` and confirm tool paths and parameters match your system.
-- Run the pipeline on a small subset first to validate configuration.
-- Add a `requirements.txt` or documentation listing exact software versions if you plan to share or reproduce results.
 
-Contact
-- If you want, I can: (a) inspect `scripts/run_pipeline.sh` and suggest improvements, (b) add a `requirements.txt`, or (c) create a small example run command that processes a single sample.
+- Add a `requirements.txt` or documentation listing exact software versions if you plan to share or reproduce results?
+
+

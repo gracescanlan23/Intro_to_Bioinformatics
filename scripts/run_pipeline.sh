@@ -61,11 +61,14 @@ echo "[ALL DONE]"
 # the said harddrive. 
 
 
-# the following three lines were also written with the help of AI to ensure that the script would run from any location.
+# running this script from the project root ensures all relative paths work correctly, and that any intermediate files are created in the expected locations.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 FASTQ_DIR="$PROJECT_ROOT/dataset/fastq_files"
 ADAPTERS="$(brew --prefix trimmomatic)/share/trimmomatic/adapters/TruSeq3-PE.fa"
+
+# ensure script runs from Project root so relative paths work
+cd "$PROJECT_ROOT"
 
 # Step 2: Pre-trim Quality Control
 
@@ -77,7 +80,7 @@ if ls qc/pre_trim/fastqc/*_fastqc.html 1> /dev/null 2>&1; then
   echo "[OK] Pre-trim FastQC reports already exist — skipping"
 else
   echo "[QC] Running FastQC on raw FASTQs"
-  fastqc dataset/fastq_files/*.fastq.gz -o qc/pre_trim/fastqc/
+  fastqc "$FASTQ_DIR"/*.fastq.gz -o qc/pre_trim/fastqc/
 fi
 
 # MultiQC aggregation
@@ -103,9 +106,9 @@ for SRR in "${SRR_LIST[@]}"; do
 
   trimmomatic PE -threads 4 \
     "$FASTQ_DIR/${SRR}_1.fastq.gz" "$FASTQ_DIR/${SRR}_2.fastq.gz" \
-    "$PAIR1" "trimmedReads/${SRR}_1.fastq.gz" \
-    "$PAIR2" "trimmedReads/${SRR}_2.fastq.gz" \
-    ILLUMINACLIP":"$ADAPTERS":2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36 \
+    "$PAIR1" \
+    "$PAIR2" \
+    ILLUMINACLIP:"$ADAPTERS":2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36 \
     2> trimmedReads/${SRR}_trimming.log
 
   if [[ ! -s "$PAIR1" || ! -s "$PAIR2" ]]; then
