@@ -63,8 +63,9 @@ echo "[ALL DONE]"
 
 # the following three lines were also written with the help of AI to ensure that the script would run from any location.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-cd "$PROJECT_ROOT"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+FASTQ_DIR="$PROJECT_ROOT/dataset/fastq_files"
+ADAPTERS="$(brew --prefix trimmomatic)/share/trimmomatic/adapters/TruSeq3-PE.fa"
 
 # Step 2: Pre-trim Quality Control
 
@@ -87,7 +88,32 @@ else
   multiqc qc/pre_trim/fastqc/ -o qc/pre_trim/multiqc/
 fi
 
+
 # Step 3: Trimming / Cleaning
+
+mkdir -p trimmedReads
+for SRR in "${SRR_LIST[@]}"; do
+  PAIR1="trimmedReads/${SRR}_1.fastq.gz"
+  PAIR2="trimmedReads/${SRR}_2.fastq.gz"
+
+  if [[ -s "$PAIR1" && -s "$PAIR2" ]]; then
+    echo "[OK] $SRR trimmed files exist — skipping"
+    continue
+  fi
+
+  trimmomatic PE -threads 4 \
+    "$FASTQ_DIR/${SRR}_1.fastq.gz" "$FASTQ_DIR/${SRR}_2.fastq.gz" \
+    "$PAIR1" "trimmedReads/${SRR}_1.fastq.gz" \
+    "$PAIR2" "trimmedReads/${SRR}_2.fastq.gz" \
+    ILLUMINACLIP":"$ADAPTERS":2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36 \
+    2> trimmedReads/${SRR}_trimming.log
+
+  if [[ ! -s "$PAIR1" || ! -s "$PAIR2" ]]; then
+    echo "[ERROR] $SRR trimming failed — stopping"
+    exit 1
+  fi
+done
+
 
 # Step 4: Post-trim Quality Control
 
