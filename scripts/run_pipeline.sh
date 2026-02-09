@@ -72,7 +72,7 @@ cd "$PROJECT_ROOT"
 
 # Step 2: Pre-trim Quality Control
 
-# FastQC on raw FASTQs
+# Make directory structure for pre_trim QC outputs
 mkdir -p qc/pre_trim/fastqc qc/pre_trim/multiqc
 
 # FastQC on raw FastQs
@@ -95,9 +95,16 @@ fi
 # Step 3: Trimming / Cleaning
 
 mkdir -p trimmedReads
+# ensure trimmomatic and adapter file are available (no hardcoded absolute paths)
+command -v trimmomatic >/dev/null 2>&1 || { echo "[ERROR] trimmomatic not in PATH"; exit 1; }
+if [[ ! -f "$ADAPTERS" ]]; then
+  echo "[ERROR] Adapter file not found: $ADAPTERS"
+  exit 1
+fi
+
 for SRR in "${SRR_LIST[@]}"; do
-  PAIR1="trimmedReads/${SRR}_1.fastq.gz"
-  PAIR2="trimmedReads/${SRR}_2.fastq.gz"
+  PAIR1="trimmedReads/${SRR}_1_paired.fastq.gz"
+  PAIR2="trimmedReads/${SRR}_2_paired.fastq.gz"
 
   if [[ -s "$PAIR1" && -s "$PAIR2" ]]; then
     echo "[OK] $SRR trimmed files exist — skipping"
@@ -106,19 +113,42 @@ for SRR in "${SRR_LIST[@]}"; do
 
   trimmomatic PE -threads 4 \
     "$FASTQ_DIR/${SRR}_1.fastq.gz" "$FASTQ_DIR/${SRR}_2.fastq.gz" \
-    "$PAIR1" \
-    "$PAIR2" \
+    "$PAIR1" /dev/null \
+    "$PAIR2" /dev/null \
     ILLUMINACLIP:"$ADAPTERS":2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36 \
     2> trimmedReads/${SRR}_trimming.log
 
   if [[ ! -s "$PAIR1" || ! -s "$PAIR2" ]]; then
-    echo "[ERROR] $SRR trimming failed — stopping"
+    echo "[ERROR] $SRR trimming failed — check trimmedReads/${SRR}_trimming.log"
     exit 1
   fi
 done
+# Visual Studio Text Editor was used to help debug the above code. 
+# The main issue was that the trimmomatic command was not running correctly, and the output files were not being created. 
+# After some debugging, I found that the issue was with the way the trimmomatic command was being called. 
 
 
 # Step 4: Post-trim Quality Control
+
+# Make directory structure for post_trim QC outputs
+mkdir -p qc/post_trim/fastqc qc/post_trim/multiqc
+
+# FastQC on trimmed FastQs
+if ls qc/post_trim/fastqc/*_fastqc.html 1> /dev/null 2>&1; then
+  echo "[OK] Post-trim FastQC reports already exist — skipping"
+else
+  echo "[QC] Running FastQC on trimmed FASTQs"
+  fastqc trimmedReads/*_paired.fastq.gz -o qc/post_trim/fastqc/
+fi
+
+# MultiQC aggregation
+if [[ -f qc/post_trim/multiqc/multiqc_report.html ]]; then
+  echo "[OK] Post-trim MultiQC report already exists — skipping"
+else
+  echo "[QC] Running MultiQC on post-trim FastQC reports"
+  multiqc qc/post_trim/fastqc/ -o qc/post_trim/multiqc/
+fi
+
 
 # Step 5: Quantification + Count Matrix
 
