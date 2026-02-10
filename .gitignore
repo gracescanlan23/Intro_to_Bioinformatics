@@ -1,2 +1,5 @@
+# ignore FASTQ files in the dataset directory
 dataset/fastq_files/
-trimmedReads/
+
+# ignore FASTQ files but allow logs
+trimmedReads/*_paired.fastq.gz

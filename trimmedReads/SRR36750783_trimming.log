@@ -1,0 +1,7 @@
+TrimmomaticPE: Started with arguments:
+ -threads 4 /Volumes/GraceHardDrive/Intro_to_Bioinformatics/dataset/fastq_files/SRR36750783_1.fastq.gz /Volumes/GraceHardDrive/Intro_to_Bioinformatics/dataset/fastq_files/SRR36750783_2.fastq.gz trimmedReads/SRR36750783_1_paired.fastq.gz /dev/null trimmedReads/SRR36750783_2_paired.fastq.gz /dev/null ILLUMINACLIP:/usr/local/opt/trimmomatic/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36
+Using PrefixPair: 'TACACTCTTTCCCTACACGACGCTCTTCCGATCT' and 'GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT'
+ILLUMINACLIP: Using 1 prefix pairs, 0 forward/reverse sequences, 0 forward only sequences, 0 reverse only sequences
+Quality encoding detected as phred33
+Input Read Pairs: 40073560 Both Surviving: 39773107 (99.25%) Forward Only Surviving: 299529 (0.75%) Reverse Only Surviving: 0 (0.00%) Dropped: 924 (0.00%)
+TrimmomaticPE: Completed successfully
