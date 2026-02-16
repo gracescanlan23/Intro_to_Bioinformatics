@@ -150,8 +150,60 @@ else
 fi
 
 
-# Step 5: Quantification + Count Matrix
+# Step 5: Alignment
+
+# Make directory for HISAT2 outputs
+mkdir -p HISAT2
+cd HISAT2
+
+# Download Genome Index ONLY if not already installed
+if [[ ! -f grch38/genome.1.ht2 ]]; then
+    echo "[INFO] Downloading HISAT2 genome index..."
+    wget -O grch38_genome.tar.gz https://genome-idx.s3.amazonaws.com/hisat/grch38_genome.tar.gz
+    tar -xzf grch38_genome.tar.gz
+else
+    echo "[INFO] HISAT2 genome index already exists — skipping download"
+fi
+
+# Run alighnment for each sample
+for SRR in "${SRR_LIST[@]}"; do
+  BAM_FILE="${SRR}.sorted.bam"
+  LOG="${SRR}_hisat2.log"
+
+  if [[ -s "$BAM_FILE" ]]; then
+    echo "[OK] $SRR HISAT2 output exists — skipping"
+    continue
+  fi
+
+  # fail early if input files are missing
+  if [[ ! -s "../trimmedReads/${SRR}_1_paired.fastq.gz" || ! -s "../trimmedReads/${SRR}_2_paired.fastq.gz" ]]; then
+    echo "[ERROR] Trimmed FASTQs for $SRR not found — check previous steps"
+    exit 1
+  fi
+
+  hisat2 -p 4 --dta -x grch38/genome \
+  -1 "../trimmedReads/${SRR}_1_paired.fastq.gz" \
+  -2 "../trimmedReads/${SRR}_2_paired.fastq.gz" \
+  2> "$LOG" \
+| samtools sort -@ 4 -o "$BAM_FILE" -
+
+    samtools index "$BAM_FILE"
+
+    if [[ ! -s "$BAM_FILE" ]]; then
+      echo "[ERROR] $SRR HISAT2 alignment failed — check $LOG"
+      exit 1
+    fi
+
+    echo "[DONE] $SRR HISAT2 alignment complete"
+
+done
 
 
 
 
+
+
+
+duration=$SECONDS
+
+echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."

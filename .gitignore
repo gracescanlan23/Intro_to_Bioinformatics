@@ -1,5 +1,19 @@
-# ignore FASTQ files in the dataset directory
-dataset/fastq_files/
 
-# ignore FASTQ files but allow logs
+# ignore FASTQ files in the dataset directory (by pattern, not whole dir)
+dataset/fastq_files/*.fastq
+dataset/fastq_files/*.fastq.gz
+dataset/fastq_files/*.fq
+dataset/fastq_files/*.fq.gz
+
+# ignore paired trimmed FASTQs
 trimmedReads/*_paired.fastq.gz
+
+# allow logs to be tracked
+!dataset/fastq_files/*.log
+!trimmedReads/*.log
+
+# ignore HISAT2 bam files, bam.bai files, gz file, and ht2 index files
+HISAT2/*.bam
+HISAT2/*.bam.bai
+HISAT2/*.gz
+HISAT2/grch38/genome.*.ht2

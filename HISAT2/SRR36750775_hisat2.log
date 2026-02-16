@@ -1,0 +1,17 @@
+Warning: the current version of HISAT2 () is older than the version (2.0.2-beta) used to build the index.
+         Users are strongly recommended to update HISAT2 to the latest version.
+34963154 reads; of these:
+  34963154 (100.00%) were paired; of these:
+    3124549 (8.94%) aligned concordantly 0 times
+    30624004 (87.59%) aligned concordantly exactly 1 time
+    1214601 (3.47%) aligned concordantly >1 times
+    ----
+    3124549 pairs aligned concordantly 0 times; of these:
+      143655 (4.60%) aligned discordantly 1 time
+    ----
+    2980894 pairs aligned 0 times concordantly or discordantly; of these:
+      5961788 mates make up the pairs; of these:
+        3582356 (60.09%) aligned 0 times
+        2194114 (36.80%) aligned exactly 1 time
+        185318 (3.11%) aligned >1 times
+94.88% overall alignment rate
