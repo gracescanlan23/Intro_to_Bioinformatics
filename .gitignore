@@ -17,3 +17,10 @@ HISAT2/*.bam
 HISAT2/*.bam.bai
 HISAT2/*.gz
 HISAT2/grch38/genome.*.ht2
+
+# ignore featureCounts output
+counts/gene_counts.txt
+
+# ignore annotation files (GTFs)
+annotation/*.gtf
+annotation/*.gtf.gz

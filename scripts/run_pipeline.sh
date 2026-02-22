@@ -1,5 +1,3 @@
-# Step 1: Download FASTQs
-
 #!/bin/bash
 
 SECONDS=0
@@ -198,11 +196,47 @@ for SRR in "${SRR_LIST[@]}"; do
 
 done
 
+cd "$PROJECT_ROOT"
+#  Human GTF (GRCh38) 
+mkdir -p annotation
+cd annotation
 
+echo "[INFO] Fetching latest Homo sapiens GRCh38 GTF filename from Ensembl..."
+GTF_GZ=$(curl -s https://ftp.ensembl.org/pub/current_gtf/homo_sapiens/ | \
+  grep -o 'Homo_sapiens.GRCh38.[0-9]*.gtf.gz' | grep -v abinitio | head -n 1)
 
+if [[ -z "${GTF_GZ}" ]]; then
+  echo "[ERROR] Could not find GRCh38 GTF on Ensembl FTP."
+  exit 1
+fi
 
+GTF="${GTF_GZ%.gz}"
 
+if [[ ! -f "$GTF" ]]; then
+  echo "[DL] Downloading $GTF_GZ"
+  curl -L -O "https://ftp.ensembl.org/pub/current_gtf/homo_sapiens/$GTF_GZ"
+  gunzip -f "$GTF_GZ"
+fi
 
+[[ -f "$GTF" ]] || { echo "[ERROR] GTF not found: $GTF"; exit 1; }
+
+cd ..
+
+# after downloading/unzipping
+GTF_PATH="$PROJECT_ROOT/annotation/$GTF"
+
+# Counts (featureCounts)
+cd "$PROJECT_ROOT"
+mkdir -p counts
+BAMS=(HISAT2/*.sorted.bam)
+
+featureCounts \
+  -a "$GTF_PATH" \
+  -o counts/gene_counts.txt \
+  -T 4 \
+  -p -B -C \
+  -t exon -g gene_id \
+  "${BAMS[@]}"
 
 duration=$SECONDS
 
