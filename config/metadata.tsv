@@ -1,4 +1,4 @@
-sample_id	group	tumor_type
+sample_id	condition	tumor_type
 SRR36750771	Normal	Normal
 SRR36750772	Normal	Normal
 SRR36750775	TumorA	Villous_Adenoma
