@@ -19,7 +19,3 @@ bash scripts/run_pipeline.sh
 ```
 
 
-
-- Add a `requirements.txt` or documentation listing exact software versions if you plan to share or reproduce results?
-
-

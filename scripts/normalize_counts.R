@@ -7,32 +7,46 @@ library(DESeq2)
 library(tidyverse)
 library(here)
 
+# create normalized counts directory if it doesn't exist
+if (!dir.exists(normalized_dir)) {
+  dir.create(normalized_dir, recursive = TRUE)
+}
+
 # set paths to project root and counts directory
 counts_path <- here("counts", "gene_counts.txt")
 meta_path <- here("config", "metadata.tsv")
 normalized_dir <- here("normalized_counts")
 
-###### Load gene counts
+# Load gene counts
 counts <- read.table(counts_path,
                      header = TRUE,
                      row.names = 1,
                      comment.char = "#")
 
-# Remove annotation columns from Featurecounts
+# Keep only sample columns (drop featureCounts annotation cols)
 counts <- counts[, 6:ncol(counts)]
 
-####### clean up column names #######
+# Clean counts column names: HISAT2.SRRxxxx.sorted(.bam) -> SRRxxxx
+colnames(counts) <- gsub("^HISAT2\\.", "", colnames(counts))
+colnames(counts) <- gsub("\\.sorted(\\.bam)?$", "", colnames(counts))
+colnames(counts) <- trimws(colnames(counts))
 
-# Remove HISAT2. prefix
-colnames(counts) <- sub("^HISAT2\\.", "", colnames(counts))
+# Load metadata (ONLY ONCE)
+metadata <- read.table(meta_path, header = TRUE, sep = "\t")
 
-# Remove .sorted suffix
-colnames(counts) <- sub("\\.sorted$", "", colnames(counts))
+# Set metadata rownames from sample_id (and trim whitespace)
+metadata$sample_id <- trimws(metadata$sample_id)
+rownames(metadata) <- metadata$sample_id
 
-# Check result
-head(colnames(counts))
+# Check what's missing (THIS should be character(0))
+missing <- setdiff(rownames(metadata), colnames(counts))
+missing
 
-head(counts)
+# Stop early if something is missing
+stopifnot(length(missing) == 0)
+
+# Reorder/subset
+counts <- counts[, rownames(metadata)]
 
 # Load metadata
 metadata <- read.table(meta_path,
@@ -41,11 +55,6 @@ metadata <- read.table(meta_path,
                        sep = "\t")
 
 metadata
-
-# Make sure sample names in metadata match column names in counts
-rownames(metadata) <- metadata$SampleID
-
-counts <- counts[, rownames(metadata)]
 
 ###### Create DESeq dataset
 dds <- DESeqDataSetFromMatrix(
@@ -84,11 +93,33 @@ boxplot(log2(normalized_counts + 1),
         ylab = "Log2(Normalized Counts + 1)",
         las = 2)
 
+# Save boxplots to file
+pdf("normalized_counts/boxplots.pdf")
+
+boxplot(log2(counts + 1),
+        main = "Raw Counts",
+        las = 2)
+
+boxplot(log2(normalized_counts + 1),
+        main = "Normalized Counts",
+        las = 2)
+
+dev.off()
+
 # PCA plot
 
 vsd <- vst(dds, blind = FALSE)
+dir.create(here("normalized_counts"), showWarnings = FALSE, recursive = TRUE)
+
+saveRDS(vsd, file = here("normalized_counts", "vst_object.rds"))
+
 plotPCA(vsd, intgroup = "tumor_type") +
   ggtitle("PCA of Normalized Counts") +
   theme_minimal()
+
+# Save PCA plot to file
+pdf("normalized_counts/pca.pdf")
+print(plotPCA(vsd, intgroup = "tumor_type"))
+dev.off()
 
 # AI used to troubleshoot dataframe problem with column names.
