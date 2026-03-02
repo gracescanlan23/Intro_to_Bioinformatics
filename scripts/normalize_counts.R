@@ -106,6 +106,31 @@ boxplot(log2(normalized_counts + 1),
 
 dev.off()
 
+# Overlay Density Plot raw vs normalized (robust)
+
+pdf(here("normalized_counts", "raw_vs_normalized_density.pdf"))
+
+raw_vec  <- log2(as.vector(as.matrix(counts)) + 1)
+norm_vec <- log2(as.vector(as.matrix(normalized_counts)) + 1)
+
+# drop any weird values just in case
+raw_vec  <- raw_vec[is.finite(raw_vec)]
+norm_vec <- norm_vec[is.finite(norm_vec)]
+
+plot(density(raw_vec),
+     col = "red",
+     main = "Raw vs Normalized Counts",
+     xlab = "Log2(counts + 1)")
+
+lines(density(norm_vec), col = "blue")
+
+legend("topright",
+       legend = c("Raw", "Normalized"),
+       col = c("red", "blue"),
+       lwd = 2)
+
+dev.off()
+
 # PCA plot
 
 vsd <- vst(dds, blind = FALSE)
