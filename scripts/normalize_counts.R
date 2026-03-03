@@ -31,14 +31,14 @@ colnames(counts) <- gsub("^HISAT2\\.", "", colnames(counts))
 colnames(counts) <- gsub("\\.sorted(\\.bam)?$", "", colnames(counts))
 colnames(counts) <- trimws(colnames(counts))
 
-# Load metadata (ONLY ONCE)
+# Load metadata 
 metadata <- read.table(meta_path, header = TRUE, sep = "\t")
 
 # Set metadata rownames from sample_id (and trim whitespace)
 metadata$sample_id <- trimws(metadata$sample_id)
 rownames(metadata) <- metadata$sample_id
 
-# Check what's missing (THIS should be character(0))
+# Check what's missing (THIS should be character(0)) this section created by AI to troubleshoot dataframe problem with column names.
 missing <- setdiff(rownames(metadata), colnames(counts))
 missing
 
@@ -132,6 +132,18 @@ legend("topright",
 dev.off()
 
 # PCA plot
+# subsetting the DESeq object
+dds_subset <- dds[, colnames(dds) != "SRR36750771"]
+
+vst_subset <- vst(dds_subset, blind = FALSE)
+plotPCA(vst_subset, intgroup = "tumor_type") +
+  ggtitle("PCA of Normalized Counts (Subset)") +
+  theme_minimal()
+
+pdf("normalized_counts/pca_subset.pdf")
+print(plotPCA(vst_subset, intgroup = "tumor_type"))
+
+dev.off()
 
 vsd <- vst(dds, blind = FALSE)
 dir.create(here("normalized_counts"), showWarnings = FALSE, recursive = TRUE)
@@ -146,5 +158,3 @@ plotPCA(vsd, intgroup = "tumor_type") +
 pdf("normalized_counts/pca.pdf")
 print(plotPCA(vsd, intgroup = "tumor_type"))
 dev.off()
-
-# AI used to troubleshoot dataframe problem with column names.
