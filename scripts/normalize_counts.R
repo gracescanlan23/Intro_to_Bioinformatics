@@ -131,7 +131,8 @@ legend("topright",
 
 dev.off()
 
-# PCA plot
+# PCA plots
+
 # subsetting the DESeq object
 dds_subset <- dds[, colnames(dds) != "SRR36750771"]
 
