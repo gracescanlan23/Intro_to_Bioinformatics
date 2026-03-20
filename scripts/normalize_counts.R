@@ -1,5 +1,3 @@
-
-
 # Install packages if not already installed
 if (!require("BiocManager")) install.packages("BiocManager")
 if (!require("DESeq2")) BiocManager::install("DESeq2")
