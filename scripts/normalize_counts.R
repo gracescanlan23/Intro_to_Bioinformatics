@@ -1,9 +1,4 @@
 
-# Clean output directory
-if (dir.exists("normalized_counts")) {
-  unlink("normalized_counts", recursive = TRUE)
-}
-dir.create("normalized_counts", recursive = TRUE)
 
 # Install packages if not already installed
 if (!require("BiocManager")) install.packages("BiocManager")
@@ -191,7 +186,7 @@ dev.off()
 resultsNames(dds)
 levels(dds$tumor_type)
 
-#### extract results for one comparison 
+#### extract results for one comparison
 
 res <- results(dds, contrast = c("tumor_type", "Advanced_Tumor", "Normal"))
 res <- res[order(res$padj), ]
@@ -218,7 +213,7 @@ res_shrunk <- lfcShrink(
 ### order shrunk results by adjusted p-value and save top 20 to file
 res_shrunk <- res_shrunk[order(res_shrunk$padj), ]
 top20_shrunk <- head(res_shrunk, 20)
-write.csv(top20_shrunk, file = "normalized_counts/top20_Advanced_Tumor_vs_Normal_shrunk.csv", row.names = TRUE) 
+write.csv(top20_shrunk, file = "normalized_counts/top20_Advanced_Tumor_vs_Normal_shrunk.csv", row.names = TRUE)
 
 #### add gene IDs, genesymbols, and gene names to results table
 
