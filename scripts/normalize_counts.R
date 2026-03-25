@@ -76,6 +76,16 @@ resultsNames(dds)
 # Remove very low count genes
 dds <- dds[rowSums(counts(dds)) > 10, ]
 
+####### Normalization Explanation
+# DESeq2 was used for normalization because it provides a robust method for correcting differences
+# in sequencing depth and library size across samples. RNA-seq datasets often contain variability due to techincal 
+# factors, and DESeq2 addresses this by estimating size factors that scale counts to make samples comparable. 
+# Unlike simple normalization methods, DESeq2 uses a median-of-ratios approach, which is less sensitive to extreme values and highly expressed genes. 
+# This method assumes that most genes are not differentially expressed, allowing it to accurately estimate normalization
+# factors across the dataset. Additionally, DESeq2 models count data using a negative bionomial distribution, which 
+# is well-suited for RNA-seq data that exhibit overdispersion. This improves the reliability of downstream statistical
+# testing for differential expression. Overall, DESeq2 normalization ensures that observed differences in gene expression are more
+# likely to reflect true biological variation rather than technical bias. 
 
 # Run DESeq differential expression analysis
 dds <- DESeq(dds)
