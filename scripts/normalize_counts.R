@@ -80,8 +80,6 @@ dds$tumor_type <- factor(dds$tumor_type)
 cat("\nTumor type levels:\n")
 print(levels(dds$tumor_type))
 
-#######levels(dds$tumor_type)#########
-#######resultsNames(dds)#########
 
 # Remove very low count genes
 dds <- dds[rowSums(counts(dds)) > 10, ]

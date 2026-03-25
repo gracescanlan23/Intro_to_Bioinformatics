@@ -96,6 +96,15 @@ colnames(deg_results) <- c(
 
 write.csv(deg_results, here("DEG_results.csv"), row.names = FALSE)
 
+# --------------------------
+# number of significant DEGs (FDR < 0.05) and directionality 
+# --------------------------
+
+num_sig <- sum(res_df$padj < 0.05, na.rm = TRUE)
+up_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 0, na.rm = TRUE)
+down_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < 0, na.rm = TRUE)
+
+
 # -------------------------
 # Volcano plot
 # -------------------------
@@ -113,20 +122,30 @@ volcano_plot <- ggplot(
   scale_color_manual(values = c("Down" = "blue", "NS" = "gray", "Up" = "red")) +
   geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  annotate(
+  "text",
+  x = max(res_df$log2FoldChange, na.rm = TRUE) * 0.35,
+  y = max(-log10(res_df$padj), na.rm = TRUE) * 0.95,
+  label = paste0(
+    "Significant DEGs: ", num_sig, "\n",
+    "Upregulated: ", up_genes, "\n",
+    "Downregulated: ", down_genes
+  ),
+  hjust = 0,
+  size = 4
+)+
   theme_minimal() +
   labs(
     title = "Volcano Plot",
     x = "Log2 Fold Change",
     y = "-Log10 Adjusted P-value"
   )
-
 ggsave(
-  filename = here("output", "volcano_plot.pdf"),
+  filename = "output/volcano_plot.pdf",
   plot = volcano_plot,
   width = 8,
   height = 6
 )
-
 # -------------------------
 # MA plot
 # -------------------------
