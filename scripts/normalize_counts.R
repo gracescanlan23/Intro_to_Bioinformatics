@@ -45,23 +45,27 @@ metadata <- read.table(meta_path, header = TRUE, sep = "\t")
 metadata$sample_id <- trimws(metadata$sample_id)
 rownames(metadata) <- metadata$sample_id
 
-# Check what's missing (THIS should be character(0)) this section created by AI to troubleshoot dataframe problem with column names.
-missing <- setdiff(rownames(metadata), colnames(counts))
-missing
+# Sanity Checks
+cat("Count matrix dimensions:\n")
+print(dim(counts))
+cat("\nMetadata dimensions:\n")
+print(dim(metadata))
 
-# Stop early if something is missing
+cat("\nPreview of count matrix:\n")
+print(head(counts[, 1:min(5, ncol(counts))]))
+
+cat("\nPreview of metadata:\n")
+print(head(metadata))
+
+missing <- setdiff(rownames(metadata), colnames(counts))
+cat("\nSamples in metadata but not counts:\n")
+print(missing)
+
 stopifnot(length(missing) == 0)
+
 
 # Reorder/subset
 counts <- counts[, rownames(metadata)]
-
-# Load metadata
-metadata <- read.table(meta_path,
-                       header = TRUE,
-                       row.names = 1,
-                       sep = "\t")
-
-metadata
 
 ###### Create DESeq dataset
 dds <- DESeqDataSetFromMatrix(
@@ -70,11 +74,20 @@ dds <- DESeqDataSetFromMatrix(
   design = ~ tumor_type
 )
 
-levels(dds$tumor_type)
-resultsNames(dds)
+# Make sure condition is a factor
+dds$tumor_type <- factor(dds$tumor_type)
+
+cat("\nTumor type levels:\n")
+print(levels(dds$tumor_type))
+
+#######levels(dds$tumor_type)#########
+#######resultsNames(dds)#########
 
 # Remove very low count genes
 dds <- dds[rowSums(counts(dds)) > 10, ]
+
+cat("\nGenes remaining after filtering:\n")
+print(nrow(dds))
 
 ####### Normalization Explanation
 # DESeq2 was used for normalization because it provides a robust method for correcting differences
@@ -87,19 +100,10 @@ dds <- dds[rowSums(counts(dds)) > 10, ]
 # testing for differential expression. Overall, DESeq2 normalization ensures that observed differences in gene expression are more
 # likely to reflect true biological variation rather than technical bias. 
 
-# Run DESeq differential expression analysis
-dds <- DESeq(dds)
-
 
 ###### Normalize counts
 dds <- estimateSizeFactors(dds)
 normalized_counts <- counts(dds, normalized = TRUE)
-
-head(normalized_counts)
-
-res_advanced_vs_normal <- results(dds, contrast = c("tumor_type", "Advanced_Tumor", "Normal"))
-head(res_advanced_vs_normal)
-summary(res_advanced_vs_normal)
 
 # Save normalized counts to file
 write.csv(normalized_counts,
@@ -159,106 +163,4 @@ legend("topright",
        lwd = 2)
 
 dev.off()
-
-# PCA plots
-
-# subsetting the DESeq object
-dds_subset <- dds[, colnames(dds) != "SRR36750771"]
-
-vst_subset <- vst(dds_subset, blind = FALSE)
-plotPCA(vst_subset, intgroup = "tumor_type") +
-  ggtitle("PCA of Normalized Counts (Subset)") +
-  theme_minimal()
-
-pdf("normalized_counts/pca_subset.pdf")
-print(plotPCA(vst_subset, intgroup = "tumor_type"))
-
-dev.off()
-
-vsd <- vst(dds, blind = FALSE)
-dir.create(here("normalized_counts"), showWarnings = FALSE, recursive = TRUE)
-
-saveRDS(vsd, file = here("normalized_counts", "vst_object.rds"))
-
-plotPCA(vsd, intgroup = "tumor_type") +
-  ggtitle("PCA of Normalized Counts") +
-  theme_minimal()
-
-# Save PCA plot to file
-pdf("normalized_counts/pca.pdf")
-print(plotPCA(vsd, intgroup = "tumor_type"))
-dev.off()
-
-##### check available comparisions
-
-resultsNames(dds)
-levels(dds$tumor_type)
-
-#### extract results for one comparison
-
-res <- results(dds, contrast = c("tumor_type", "Advanced_Tumor", "Normal"))
-res <- res[order(res$padj), ]
-summary(res)
-head(res)
-
-#### order results by adjusted p-value and save top 20 to file
-top20 <- head(res, 20)
-write.csv(top20, file = "normalized_counts/top20_Advanced_Tumor_vs_Normal.csv", row.names = TRUE)
-
-### clean table without NA padj
-
-res_clean <- na.omit(as.data.frame(res))
-head(res_clean)
-
-#### Shrink log2 fold changes
-
-res_shrunk <- lfcShrink(
-  dds,
-  coef = "tumor_type_Normal_vs_Advanced_Tumor",
-  type = "apeglm"
-)
-
-### order shrunk results by adjusted p-value and save top 20 to file
-res_shrunk <- res_shrunk[order(res_shrunk$padj), ]
-top20_shrunk <- head(res_shrunk, 20)
-write.csv(top20_shrunk, file = "normalized_counts/top20_Advanced_Tumor_vs_Normal_shrunk.csv", row.names = TRUE)
-
-#### add gene IDs, genesymbols, and gene names to results table
-
-library(org.Hs.eg.db)
-library(AnnotationDbi)
-
-res_df <- as.data.frame(res)
-res_df$gene_id <- rownames(res_df)
-res_df$gene_symbol <- mapIds(org.Hs.eg.db,
-                             keys = res_df$gene_id,
-                             column = "SYMBOL",
-                             keytype = "ENSEMBL",
-                             multiVals = "first")
-res_df$gene_name <- mapIds(org.Hs.eg.db,
-                           keys = res_df$gene_id,
-                           column = "GENENAME",
-                           keytype = "ENSEMBL",
-                           multiVals = "first")
-head(res_df)
-
-
-#### define significant groups
-
-res_df$significance <- "Not Significant"
-
-res_df$significance[res_df$padj < 0.05 & res_df$log2FoldChange > 1] <- "Up"
-res_df$significance[res_df$padj < 0.05 & res_df$log2FoldChange < -1] <- "Down"
-
-table(res_df$significance)
-
-#### extract significant genes and save to file
-
-sig_genes <- res_df %>%
-  filter(significance != "Not Significant") %>%
-  arrange(padj)
-write.csv(sig_genes,
-          file = "normalized_counts/significant_genes_Advanced_Tumor_vs_Normal.csv",
-          row.names = FALSE)
-
 

@@ -1,48 +1,116 @@
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+if (!requireNamespace("DESeq2", quietly = TRUE)) BiocManager::install("DESeq2")
+if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
+if (!requireNamespace("ggrepel", quietly = TRUE)) install.packages("ggrepel")
+if (!requireNamespace("pheatmap", quietly = TRUE)) install.packages("pheatmap")
+if (!requireNamespace("here", quietly = TRUE)) install.packages("here")
+if (!requireNamespace("AnnotationDbi", quietly = TRUE)) BiocManager::install("AnnotationDbi")
+if (!requireNamespace("org.Hs.eg.db", quietly = TRUE)) BiocManager::install("org.Hs.eg.db")
+
 library(DESeq2)
-library(ggrepel)
-
-source("scripts/normalize_counts.R")
-
-dds <- DESeq(dds)
-res <- results(dds)
-
-# volcano plot
-
 library(ggplot2)
+library(ggrepel)
+library(pheatmap)
+library(here)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
 
-# convert results to dataframe
-# Explanation: res is a special object -> we convert it to a normal dataframe
-# We remove rows with missing values for: adjusted p-values (padj) and log2 fold change. 
-# Why: Some genes don't get valid statistics -> they would break plots or give weird points.
+source(here("scripts", "normalize_counts.R"))
+
+output_dir <- here("output")
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# -------------------------
+# Differential expression
+# -------------------------
+dds <- DESeq(dds)
+
+# Make sure the contrast matches your reference level setup
+res <- results(dds, contrast = c("tumor_type", "Advanced_Tumor", "Normal"))
+
+# -------------------------
+# Clean result table
+# -------------------------
 res_df <- as.data.frame(res)
+res_df$gene_id <- rownames(res_df)
+
 res_df <- res_df[!is.na(res_df$padj) & !is.na(res_df$log2FoldChange), ]
 
-# define significance
-# What this does: Classifies each gene into: Upregulated (red), Downregulated (blue), or Not Significant (gray) based on adjusted p-value and fold change.
-res_df$significance <- "Not Significant"
-res_df$significance[res_df$padj < 0.05 & res_df$log2FoldChange > 1] <- "Up"
-res_df$significance[res_df$padj < 0.05 & res_df$log2FoldChange < -1] <- "Down"
+# Add gene symbols and names
+res_df$gene_symbol <- mapIds(
+  org.Hs.eg.db,
+  keys = res_df$gene_id,
+  column = "SYMBOL",
+  keytype = "ENSEMBL",
+  multiVals = "first"
+)
 
-# top 10 genes for labeling
-# What this does: Sorts genes by smallest adjusted p-value (most significant first), selects top 10, and saves gene names from rownames into a column
-#Why: these are the most significant genes that we want to label on the plots for better visualization and interpretation.
+res_df$gene_name <- mapIds(
+  org.Hs.eg.db,
+  keys = res_df$gene_id,
+  column = "GENENAME",
+  keytype = "ENSEMBL",
+  multiVals = "first"
+)
+
+# -------------------------
+# DE summary counts
+# -------------------------
+genes_tested <- nrow(res_df)
+sig_count <- sum(res_df$padj < 0.05, na.rm = TRUE)
+up_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 1, na.rm = TRUE)
+down_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < -1, na.rm = TRUE)
+
+cat("Genes tested:", genes_tested, "\n")
+cat("Significant genes (FDR < 0.05):", sig_count, "\n")
+cat("Upregulated genes:", up_count, "\n")
+cat("Downregulated genes:", down_count, "\n")
+
+# -------------------------
+# Regulation groups
+# -------------------------
+res_df$Regulation <- "NS"
+res_df$Regulation[res_df$padj < 0.05 & res_df$log2FoldChange > 1] <- "Up"
+res_df$Regulation[res_df$padj < 0.05 & res_df$log2FoldChange < -1] <- "Down"
+
+# -------------------------
+# Top 10 genes for labeling
+# -------------------------
 top_genes <- res_df[order(res_df$padj), ][1:10, ]
-top_genes$gene <- rownames(top_genes)
+top_genes$label <- ifelse(
+  is.na(top_genes$gene_symbol) | top_genes$gene_symbol == "",
+  top_genes$gene_id,
+  top_genes$gene_symbol
+)
 
-# volcano plot with labels
-volcano_plot <- ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+# -------------------------
+# Export DEG results
+# -------------------------
+deg_results <- res_df[, c("gene_id", "log2FoldChange", "pvalue", "padj", "Regulation", "gene_symbol", "gene_name")]
+colnames(deg_results) <- c(
+  "Gene_ID", "log2FC", "p_value", "adjusted_p_value",
+  "Regulation", "Gene_Symbol", "Gene_Name"
+)
+
+write.csv(deg_results, here("DEG_results.csv"), row.names = FALSE)
+
+# -------------------------
+# Volcano plot
+# -------------------------
+volcano_plot <- ggplot(
+  res_df,
+  aes(x = log2FoldChange, y = -log10(padj), color = Regulation)
+) +
   geom_point(alpha = 0.6) +
   geom_text_repel(
     data = top_genes,
-    aes(label = gene),
+    aes(label = label),
     size = 3,
     max.overlaps = 100
   ) +
-  scale_color_manual(values = c(
-    "Down" = "blue",
-    "Not Significant" = "gray",
-    "Up" = "red"
-  )) +
+  scale_color_manual(values = c("Down" = "blue", "NS" = "gray", "Up" = "red")) +
   geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
   theme_minimal() +
@@ -51,29 +119,30 @@ volcano_plot <- ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color =
     x = "Log2 Fold Change",
     y = "-Log10 Adjusted P-value"
   )
-# Volcano Plot Code Explanation:
-# Axes: x-axis is log2 fold change (how much a gene's expression changes), y-axis is -log10 of the adjusted p-value (significance of that change).
-# Points: Each point is a gene, colored by significance (red for upregulated, blue for downregulated, gray for not significant).
-# Labels: The most significant genes (top 10) are labeled with their names for easy identification.
-# Threshold Lines: Dashed lines indicate thresholds for significance (p-value < 0.05) and fold change (log2 fold change > 1 or < -1).
 
+ggsave(
+  filename = here("output", "volcano_plot.pdf"),
+  plot = volcano_plot,
+  width = 8,
+  height = 6
+)
 
-
-# MA plot with labels
-ma_plot <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange, color = significance)) +
+# -------------------------
+# MA plot
+# -------------------------
+ma_plot <- ggplot(
+  res_df,
+  aes(x = baseMean, y = log2FoldChange, color = Regulation)
+) +
   geom_point(alpha = 0.6) +
   geom_text_repel(
     data = top_genes,
-    aes(label = gene),
+    aes(label = label),
     size = 3,
     max.overlaps = 100
   ) +
   scale_x_log10() +
-  scale_color_manual(values = c(
-    "Down" = "blue",
-    "Not Significant" = "gray",
-    "Up" = "red"
-  )) +
+  scale_color_manual(values = c("Down" = "blue", "NS" = "gray", "Up" = "red")) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   theme_minimal() +
   labs(
@@ -82,17 +151,57 @@ ma_plot <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange, color = signific
     y = "Log2 Fold Change"
   )
 
-# MA Plot Code Explanation:
-# Axes: x-axis is the mean expression of each gene across all samples (on a log scale), y-axis is the log2 fold change (how much a gene's expression changes).
-# Points: Each point is a gene, colored by significance (red for upregulated, blue for downregulated, gray for not significant).
-# Labels: The most significant genes (top 10) are labeled with their names for easy identification.
-# Threshold Line: A dashed line at y=0 indicates no change in expression (log2 fold change of 0 means the gene is not differentially expressed).
+ggsave(
+  filename = here("output", "ma_plot.pdf"),
+  plot = ma_plot,
+  width = 8,
+  height = 6
+)
 
-# Save plots
-pdf("normalized_counts/volcano_plot.pdf")
-print(volcano_plot)
-dev.off()
+# -------------------------
+# PCA plot
+# -------------------------
+vsd <- vst(dds, blind = FALSE)
 
-pdf("normalized_counts/ma_plot.pdf")
-print(ma_plot)
-dev.off()
+pca_plot <- plotPCA(vsd, intgroup = "tumor_type") +
+  ggtitle("PCA Plot") +
+  theme_minimal()
+
+ggsave(
+  filename = here("output", "pca_plot.pdf"),
+  plot = pca_plot,
+  width = 8,
+  height = 6
+)
+# -------------------------
+# PCA subplot without one normal sample
+# -------------------------
+# -------------------------
+# Subset PCA plot (remove one normal sample)
+# -------------------------
+dds_subset <- dds[, colnames(dds) != "SRR36750771"]
+
+vsd_subset <- vst(dds_subset, blind = FALSE)
+
+pca_subset_plot <- plotPCA(vsd_subset, intgroup = "tumor_type") +
+  ggtitle("PCA Plot (Subset: One Normal Sample Removed)") +
+  theme_minimal()
+
+ggsave(
+  filename = here("output", "pca_subset.pdf"),
+  plot = pca_subset_plot,
+  width = 8,
+  height = 6
+)
+
+# -------------------------
+# Top 10 DEG table for report
+# -------------------------
+top10_deg <- head(deg_results[order(deg_results$adjusted_p_value), ], 10)
+print(top10_deg)
+
+write.csv(
+  top10_deg,
+  file = here("output", "top10_DEGs.csv"),
+  row.names = FALSE
+)
