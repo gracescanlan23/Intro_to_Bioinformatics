@@ -17,9 +17,18 @@ library(org.Hs.eg.db)
 
 source(here("scripts", "02_normalize_counts.R"))
 
-output_dir <- here("output")
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
+# DEG outputs 
+deg_dir <- here("output", "advanced_vs_normal")
+
+if (!dir.exists(deg_dir)) {
+  dir.create(deg_dir, recursive = TRUE)
+}
+
+# PCA outputs
+pca_dir <- here("output", "pca")
+
+if (!dir.exists(pca_dir)) {
+  dir.create(pca_dir, recursive = TRUE)
 }
 
 # -------------------------
@@ -94,7 +103,11 @@ colnames(deg_results) <- c(
   "Regulation", "Gene_Symbol", "Gene_Name"
 )
 
-write.csv(deg_results, here("DEG_results.csv"), row.names = FALSE)
+write.csv(
+  deg_results,
+  file.path(deg_dir, "DEG_results_advanced_vs_normal.csv"),
+  row.names = FALSE
+)
 
 # --------------------------
 # number of significant DEGs (FDR < 0.05) and directionality 
@@ -141,7 +154,7 @@ volcano_plot <- ggplot(
     y = "-Log10 Adjusted P-value"
   )
 ggsave(
-  filename = "output/volcano_plot.pdf",
+  filename = file.path(deg_dir, "volcano_plot_advanced_vs_normal.pdf"),
   plot = volcano_plot,
   width = 8,
   height = 6
@@ -171,7 +184,7 @@ ma_plot <- ggplot(
   )
 
 ggsave(
-  filename = here("output", "ma_plot.pdf"),
+  filename = file.path(deg_dir, "ma_plot_advanced_vs_normal.pdf"),
   plot = ma_plot,
   width = 8,
   height = 6
@@ -187,7 +200,7 @@ pca_plot <- plotPCA(vsd, intgroup = "tumor_type") +
   theme_minimal()
 
 ggsave(
-  filename = here("output", "pca_plot.pdf"),
+  filename = file.path(pca_dir, "pca_plot.pdf"),
   plot = pca_plot,
   width = 8,
   height = 6
@@ -207,7 +220,7 @@ pca_subset_plot <- plotPCA(vsd_subset, intgroup = "tumor_type") +
   theme_minimal()
 
 ggsave(
-  filename = here("output", "pca_subset.pdf"),
+  filename = file.path(pca_dir, "pca_subset.pdf"),
   plot = pca_subset_plot,
   width = 8,
   height = 6
@@ -221,6 +234,6 @@ print(top10_deg)
 
 write.csv(
   top10_deg,
-  file = here("output", "top10_DEGs.csv"),
+  file.path(deg_dir, "top10_DEGs_advanced_vs_normal.csv"),
   row.names = FALSE
 )

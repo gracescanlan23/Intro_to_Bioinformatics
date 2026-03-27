@@ -12,10 +12,11 @@ library(here)
 # ---------------------------------
 source(here("scripts", "03_visualizations.R"))
 
-# Make sure output folder exists
-output_dir <- here("output")
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
+# create output directory for heatmaps
+heatmap_dir <- here("output", "heatmaps")
+
+if (!dir.exists(heatmap_dir)) {
+  dir.create(heatmap_dir, recursive = TRUE)
 }
 
 # ---------------------------------
@@ -29,7 +30,7 @@ sample_dist_matrix <- as.matrix(sample_dists)
 rownames(sample_dist_matrix) <- colnames(mat)
 colnames(sample_dist_matrix) <- colnames(mat)
 
-pdf(here("output", "sample_distance_heatmap.pdf"), width = 8, height = 8)
+pdf(file.path(heatmap_dir, "sample_distance_heatmap.pdf"), width = 8, height = 8)
 
 pheatmap(
   sample_dist_matrix,
@@ -81,7 +82,7 @@ rownames(mat_scaled) <- row_labels
 # sample annotation from DESeq object
 annotation_col <- as.data.frame(colData(vsd))[, "tumor_type", drop = FALSE]
 
-pdf(here("output", "top_significant_genes_heatmap.pdf"), width = 8, height = 10)
+pdf(file.path(heatmap_dir, "top_significant_genes_heatmap.pdf"), width = 8, height = 10)
 
 pheatmap(
   mat_scaled,
