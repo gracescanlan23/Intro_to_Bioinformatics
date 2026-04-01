@@ -120,7 +120,7 @@ down_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < 0, na.rm = TRUE)
 # Volcano plot
 # ----------------------------
 
-volcano_plot <- ggplot(
+volcano_plot_villous <- ggplot(
   res_df,
   aes(x = log2FoldChange, y = -log10(padj), color = Regulation)
 ) +
@@ -155,7 +155,7 @@ volcano_plot <- ggplot(
 
 ggsave(
   filename = file.path(output_dir, "volcano_plot_villous_vs_normal.pdf"),
-  plot = volcano_plot,
+  plot = volcano_plot_villous,
   width = 8,
   height = 6
 )
@@ -164,7 +164,7 @@ ggsave(
 # MA plot
 # ----------------------------
 
-ma_plot <- ggplot(
+ma_plot_villous <- ggplot(
   res_df,
   aes(x = baseMean, y = log2FoldChange, color = Regulation)
 ) +
@@ -187,7 +187,7 @@ ma_plot <- ggplot(
 
 ggsave(
   filename = file.path(output_dir, "ma_plot_villous_vs_normal.pdf"),
-  plot = ma_plot,
+  plot = ma_plot_villous,
   width = 8,
   height = 6
 )
