@@ -67,15 +67,15 @@ res_df$gene_name <- mapIds(
 # -------------------------
 # DE summary counts
 # -------------------------
-genes_tested <- nrow(res_df)
-sig_count <- sum(res_df$padj < 0.05, na.rm = TRUE)
-up_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 1, na.rm = TRUE)
-down_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < -1, na.rm = TRUE)
+advanced_genes_tested <- nrow(res_df)
+advanced_sig_count <- sum(res_df$padj < 0.05, na.rm = TRUE)
+advanced_up_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 1, na.rm = TRUE)
+advanced_down_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < -1, na.rm = TRUE)
 
-cat("Genes tested:", genes_tested, "\n")
-cat("Significant genes (FDR < 0.05):", sig_count, "\n")
-cat("Upregulated genes:", up_count, "\n")
-cat("Downregulated genes:", down_count, "\n")
+cat("Genes tested:", advanced_genes_tested, "\n")
+cat("Significant genes (FDR < 0.05):", advanced_sig_count, "\n")
+cat("Upregulated genes:", advanced_up_count, "\n")
+cat("Downregulated genes:", advanced_down_count, "\n")
 
 # -------------------------
 # Regulation groups
@@ -113,9 +113,9 @@ write.csv(
 # number of significant DEGs (FDR < 0.05) and directionality 
 # --------------------------
 
-num_sig <- sum(res_df$padj < 0.05, na.rm = TRUE)
-up_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 0, na.rm = TRUE)
-down_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < 0, na.rm = TRUE)
+advanced_num_sig <- sum(res_df$padj < 0.05, na.rm = TRUE)
+advanced_up_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 0, na.rm = TRUE)
+advanced_down_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < 0, na.rm = TRUE)
 
 
 # -------------------------
@@ -137,16 +137,21 @@ volcano_plot_advanced <- ggplot(
   geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
   annotate(
   "text",
-  x = max(res_df$log2FoldChange, na.rm = TRUE) * 0.35,
-  y = max(-log10(res_df$padj), na.rm = TRUE) * 0.95,
+  x = 1.5,
+  y = 26,
   label = paste0(
-    "Significant DEGs: ", num_sig, "\n",
-    "Upregulated: ", up_genes, "\n",
-    "Downregulated: ", down_genes
+    "Significant DEGs: ", advanced_num_sig, "\n",
+    "Upregulated: ", advanced_up_genes, "\n",
+    "Downregulated: ", advanced_down_genes
   ),
   hjust = 0,
-  size = 4
-)+
+  vjust = 1,
+  size = 3.6
+) +
+coord_cartesian(clip = "off") +
+theme(
+  plot.margin = margin(10, 40, 10, 10)
+) +
   theme_minimal() +
   labs(
     title = "Volcano Plot",
@@ -237,3 +242,4 @@ write.csv(
   file.path(deg_dir, "top10_DEGs_advanced_vs_normal.csv"),
   row.names = FALSE
 )
+

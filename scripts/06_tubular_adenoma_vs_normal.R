@@ -61,15 +61,15 @@ res_df$gene_name <- mapIds(
 # DE summary counts
 # ----------------------------
 
-genes_tested <- nrow(res_df)
-sig_count <- sum(res_df$padj < 0.05, na.rm = TRUE)
-up_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 1, na.rm = TRUE)
-down_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < -1, na.rm = TRUE)
+tubular_genes_tested <- nrow(res_df)
+tubular_sig_count <- sum(res_df$padj < 0.05, na.rm = TRUE)
+tubular_up_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 1, na.rm = TRUE)
+tubular_down_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < -1, na.rm = TRUE)
 
-cat("Genes tested:", genes_tested, "\n")
-cat("Significant genes (FDR < 0.05):", sig_count, "\n")
-cat("Upregulated genes:", up_count, "\n")
-cat("Downregulated genes:", down_count, "\n")
+cat("Genes tested:", tubular_genes_tested, "\n")
+cat("Significant genes (FDR < 0.05):", tubular_sig_count, "\n")
+cat("Upregulated genes:", tubular_up_count, "\n")
+cat("Downregulated genes:", tubular_down_count, "\n")
 
 # ----------------------------
 # Regulation groups
@@ -134,17 +134,22 @@ volcano_plot_tubular <- ggplot(
   geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
   annotate(
-    "text",
-    x = max(res_df$log2FoldChange, na.rm = TRUE) * 0.35,
-    y = max(-log10(res_df$padj), na.rm = TRUE) * 0.95,
-    label = paste0(
-      "Significant DEGs: ", num_sig, "\n",
-      "Upregulated: ", up_genes, "\n",
-      "Downregulated: ", down_genes
-    ),
-    hjust = 0,
-    size = 4
-  ) +
+  "text",
+  x = 1.5,
+  y = 26,
+  label = paste0(
+    "Significant DEGs: ", tubular_num_sig, "\n",
+    "Upregulated: ", tubular_up_genes, "\n",
+    "Downregulated: ", tubular_down_genes
+  ),
+  hjust = 0,
+  vjust = 1,
+  size = 3.6
+) +
+coord_cartesian(clip = "off") +
+theme(
+  plot.margin = margin(10, 40, 10, 10)
+) +
   theme_minimal() +
   labs(
     title = "Volcano Plot: Tubular Adenoma vs Normal",
@@ -203,3 +208,4 @@ write.csv(
   file.path(output_dir, "top10_DEGs_tubular_vs_normal.csv"),
   row.names = FALSE
 )
+
