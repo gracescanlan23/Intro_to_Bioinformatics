@@ -211,9 +211,6 @@ ggsave(
   height = 6
 )
 # -------------------------
-# PCA subplot without one normal sample
-# -------------------------
-# -------------------------
 # Subset PCA plot (remove one normal sample)
 # -------------------------
 dds_subset <- dds[, colnames(dds) != "SRR36750771"]
