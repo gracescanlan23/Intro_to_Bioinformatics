@@ -226,6 +226,7 @@ ggsave(
   width = 8,
   height = 6
 )
+print(pca_plot)
 ```
 ### Subset PCA plot (remove one normal sample to see if it improves separation)
 ```{r}
@@ -243,6 +244,7 @@ ggsave(
   width = 8,
   height = 6
 )
+print(pca_subset_plot)
 ```
 # Heatmaps
 ### Create output directory for heatmaps
@@ -273,6 +275,49 @@ pheatmap(
 )
 
 dev.off()
+```
+# Differential Expression Analysis
+### DEG outputs
+```{r}
+deg_dir <- here("output", "advanced_vs_normal")
+
+if (!dir.exists(deg_dir)) {
+  dir.create(deg_dir, recursive = TRUE)
+}
+```
+### Differential expression analysis using DESeq2
+```{r}
+dds <- DESeq(dds)
+```
+## Advanced Tumor vs Normal Tissue
+### Make sure the contrast matches reference level setup
+```{r}
+res <- results(dds, contrast = c("tumor_type", "Advanced_Tumor", "Normal"))
+```
+### Clean result Table
+```{r}
+res_df <- as.data.frame(res)
+res_df$gene_id <- rownames(res_df)
+
+res_df <- res_df[!is.na(res_df$padj) & !is.na(res_df$log2FoldChange), ]
+```
+### Add gene symbols and names 
+```{r}
+res_df$gene_symbol <- mapIds(
+  org.Hs.eg.db,
+  keys = res_df$gene_id,
+  column = "SYMBOL",
+  keytype = "ENSEMBL",
+  multiVals = "first"
+)
+
+res_df$gene_name <- mapIds(
+  org.Hs.eg.db,
+  keys = res_df$gene_id,
+  column = "GENENAME",
+  keytype = "ENSEMBL",
+  multiVals = "first"
+)
 ```
 ## Top significant genes heatmap
 ### keep only significant genes for heatmap
@@ -326,49 +371,6 @@ pheatmap(
 )
 
 dev.off()
-```
-# Differential Expression Analysis
-### DEG outputs
-```{r}
-deg_dir <- here("output", "advanced_vs_normal")
-
-if (!dir.exists(deg_dir)) {
-  dir.create(deg_dir, recursive = TRUE)
-}
-```
-### Differential expression analysis using DESeq2
-```{r}
-dds <- DESeq(dds)
-```
-## Advanced Tumor vs Normal Tissue
-### Make sure the contrast matches reference level setup
-```{r}
-res <- results(dds, contrast = c("tumor_type", "Advanced_Tumor", "Normal"))
-```
-### Clean result Table
-```{r}
-res_df <- as.data.frame(res)
-res_df$gene_id <- rownames(res_df)
-
-res_df <- res_df[!is.na(res_df$padj) & !is.na(res_df$log2FoldChange), ]
-```
-### Add gene symbols and names 
-```{r}
-res_df$gene_symbol <- mapIds(
-  org.Hs.eg.db,
-  keys = res_df$gene_id,
-  column = "SYMBOL",
-  keytype = "ENSEMBL",
-  multiVals = "first"
-)
-
-res_df$gene_name <- mapIds(
-  org.Hs.eg.db,
-  keys = res_df$gene_id,
-  column = "GENENAME",
-  keytype = "ENSEMBL",
-  multiVals = "first"
-)
 ```
 ### DE Summary Counts
 ```{r}
@@ -462,6 +464,7 @@ ggsave(
   width = 8,
   height = 6
 )
+print(volcano_plot_advanced)
 ```
 ### MA plot
 ```{r}
@@ -492,6 +495,7 @@ ggsave(
   width = 8,
   height = 6
 )
+print(ma_plot_advanced)
 ```
 ### Top 10 DEG table for report 
 ```{r}
@@ -637,6 +641,7 @@ ggsave(
   width = 8,
   height = 6
 )
+print(volcano_plot_villous)
 ```
 ### MA plot
 ```{r}
@@ -667,6 +672,7 @@ ggsave(
   width = 8,
   height = 6
 )
+print(ma_plot_villous)
 ```
 ### Top 10 DEG table
 ```{r}
@@ -682,7 +688,7 @@ write.csv(
 # Tubular Adenoma vs Normal Tissue
 ### Set output directory for this analysis
 ```{r}
-output_dir <- here("output", "tubular_vs_early_stage")
+output_dir <- here("output", "tubular_vs_normal")
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
@@ -690,7 +696,7 @@ if (!dir.exists(output_dir)) {
 ### Differential expression analysis using DESeq2
 ```{r}
 dds <- DESeq(dds)
-res <- results(dds, contrast = c("tumor_type", "Tubular_Adenoma", "Early_Stage_Tumor"))
+res <- results(dds, contrast = c("tumor_type", "Tubular_Adenoma", "Normal"))
 ```
 ### Clean result Table
 ```{r}
@@ -719,15 +725,15 @@ res_df$gene_name <- mapIds(
 ```
 ### DE Summary Counts
 ```{r}
-genes_tested <- nrow(res_df)
-sig_count <- sum(res_df$padj < 0.05, na.rm = TRUE)
-up_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 1, na.rm = TRUE)
-down_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < -1, na.rm = TRUE)
+tubular_genes_tested <- nrow(res_df)
+tubular_sig_count <- sum(res_df$padj < 0.05, na.rm = TRUE)
+tubular_up_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 1, na.rm = TRUE)
+tubular_down_count <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < -1, na.rm = TRUE)
 
-cat("Genes tested:", genes_tested, "\n")
-cat("Significant genes (FDR < 0.05):", sig_count, "\n")
-cat("Upregulated genes:", up_count, "\n")
-cat("Downregulated genes:", down_count, "\n")
+cat("Genes tested:", tubular_genes_tested, "\n")
+cat("Significant genes (FDR < 0.05):", tubular_sig_count, "\n")
+cat("Upregulated genes:", tubular_up_count, "\n")
+cat("Downregulated genes:", tubular_down_count, "\n")
 ```
 ### Regulation groups
 ```{r}
@@ -755,19 +761,19 @@ colnames(deg_results) <- c(
 
 write.csv(
   deg_results,
-  file.path(output_dir, "DEG_results_tubular_vs_early_stage.csv"),
+  file.path(output_dir, "DEG_results_tubular_vs_normal.csv"),
   row.names = FALSE
 )
 ```
 ### Count significant DEGs
 ```{r}
-num_sig <- sum(res_df$padj < 0.05, na.rm = TRUE)
-up_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 0, na.rm = TRUE)
-down_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < 0, na.rm = TRUE)
+tubular_num_sig <- sum(res_df$padj < 0.05, na.rm = TRUE)
+tubular_up_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 0, na.rm = TRUE)
+tubular_down_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < 0, na.rm = TRUE)
 ```
 ### Volcano plot
 ```{r}
-volcano_plot <- ggplot(
+volcano_plot_tubular <- ggplot(
   res_df,
   aes(x = log2FoldChange, y = -log10(padj), color = Regulation)
 ) +
@@ -786,9 +792,9 @@ volcano_plot <- ggplot(
     x = max(res_df$log2FoldChange, na.rm = TRUE) * 0.35,
     y = max(-log10(res_df$padj), na.rm = TRUE) * 0.95,
     label = paste0(
-      "Significant DEGs: ", num_sig, "\n",
-      "Upregulated: ", up_genes, "\n",
-      "Downregulated: ", down_genes
+      "Significant DEGs: ", tubular_num_sig, "\n",
+      "Upregulated: ", tubular_up_genes, "\n",
+      "Downregulated: ", tubular_down_genes
     ),
     hjust = 0,
     size = 4
@@ -802,14 +808,15 @@ volcano_plot <- ggplot(
 
 ggsave(
   filename = file.path(output_dir, "volcano_plot_tubular_vs_early_stage.pdf"),
-  plot = volcano_plot,
+  plot = volcano_plot_tubular,
   width = 8,
   height = 6
 )
+print(volcano_plot_tubular)
 ```
 ### MA plot
 ```{r}
-ma_plot <- ggplot(
+ma_plot_tubular <- ggplot(
   res_df,
   aes(x = baseMean, y = log2FoldChange, color = Regulation)
 ) +
@@ -832,10 +839,11 @@ ma_plot <- ggplot(
 
 ggsave(
   filename = file.path(output_dir, "ma_plot_tubular_vs_early_stage.pdf"),
-  plot = ma_plot,
+  plot = ma_plot_tubular,
   width = 8,
   height = 6
 )
+print(ma_plot_tubular)
 ```
 ### Top 10 DEG table
 ```{r}
@@ -844,7 +852,7 @@ print(top10_deg)
 
 write.csv(
   top10_deg,
-  file.path(output_dir, "top10_DEGs_tubular_vs_early_stage.csv"),
+  file.path(output_dir, "top10_DEGs_tubular_vs_normal.csv"),
   row.names = FALSE
 )
 ```
@@ -929,9 +937,9 @@ write.csv(
 ```
 ### Count significant DEGs
 ```{r}
-num_sig <- sum(res_df$padj < 0.05, na.rm = TRUE)
-up_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 0, na.rm = TRUE)
-down_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < 0, na.rm = TRUE)
+early_num_sig <- sum(res_df$padj < 0.05, na.rm = TRUE)
+early_up_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange > 0, na.rm = TRUE)
+early_down_genes <- sum(res_df$padj < 0.05 & res_df$log2FoldChange < 0, na.rm = TRUE)
 ```
 ### Volcano plot
 ```{r}
@@ -979,6 +987,7 @@ ggsave(
   width = 8,
   height = 6
 )
+print(volcano_plot_early_stage)
 ```
 ### MA plot
 ```{r}
@@ -1009,6 +1018,7 @@ ggsave(
   width = 8,
   height = 6
 )
+print(ma_plot_early_stage)
 ```
 ### Top 10 DEG table
 ```{r}
@@ -1176,7 +1186,7 @@ volcano_panel
 ```
 ### Save multi-panel volcano figure
 ```{r}
-ggsave("output/multi_panel/volcano_panel.pdf",
+ggsave("../output/multi_panel/volcano_panel.pdf",
        volcano_panel,
        width = 10,
        height = 8,
@@ -1205,7 +1215,7 @@ ma_panel
 ```
 ### Save multi-panel MA figure
 ```{r}
-ggsave("output/multi_panel/ma_panel.pdf",
+ggsave("../output/multi_panel/ma_panel.pdf",
        ma_panel,
        width = 10,
        height = 8,
@@ -1260,7 +1270,7 @@ deg_count_barplot <- ggplot(deg_counts_long, aes(x = Tumor, y = Count, fill = Re
 deg_count_barplot
 
 ggsave(
-  filename = "output/count_bar_plot/deg_count_barplot.png",
+  filename = "../output/count_bar_plot/deg_count_barplot.png",
   plot = deg_count_barplot,
   width = 8,
   height = 6,
@@ -1268,7 +1278,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "output/count_bar_plot/deg_count_barplot.pdf",
+  filename = "../output/count_bar_plot/deg_count_barplot.pdf",
   plot = deg_count_barplot,
   width = 8,
   height = 6
